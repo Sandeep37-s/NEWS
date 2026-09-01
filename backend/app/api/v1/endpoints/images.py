@@ -15,7 +15,10 @@ async def upload_image(
     file: UploadFile = File(...),
     license_type: str = Form("OWNED"), # PUBLIC_DOMAIN, CC_BY, LICENSED, OWNED, FAIR_USE_THUMBNAIL
     alt_text: str = Form(""),
+    caption: str = Form(""),
+    credit: str = Form(""),
     original_source: str = Form("Editorial Team"),
+    license_url: str = Form(""),
     current_user: User = Depends(get_current_editor),
     db: AsyncSession = Depends(get_db)
 ):
@@ -23,7 +26,11 @@ async def upload_image(
         db=db,
         file=file,
         license_type=license_type,
-        alt_text=alt_text,
-        original_source=original_source
+        alt_text=alt_text or None,
+        caption=caption or None,
+        credit=credit or None,
+        original_source=original_source or None,
+        license_url=license_url or None
     )
     return image_record
+

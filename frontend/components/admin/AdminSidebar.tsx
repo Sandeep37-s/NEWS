@@ -18,7 +18,8 @@ import {
   Settings,
   LogOut,
   PlusCircle,
-  ExternalLink
+  ExternalLink,
+  Image as ImageIcon
 } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -26,7 +27,8 @@ const NAV_ITEMS = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Pending Review", href: "/admin/pending", icon: Clock, highlight: true },
   { label: "All Articles", href: "/admin/articles", icon: FileText },
-  { label: "Create Article", href: "/admin/create", icon: PlusCircle },
+  { label: "Write Article", href: "/admin/create", icon: PlusCircle },
+  { label: "Media Library", href: "/admin/media", icon: ImageIcon },
   { label: "News Sources", href: "/admin/sources", icon: Rss },
   { label: "Categories", href: "/admin/categories", icon: Layers },
   { label: "Tags", href: "/admin/tags", icon: Tags },

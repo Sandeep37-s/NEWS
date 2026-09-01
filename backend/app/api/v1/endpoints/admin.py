@@ -1,11 +1,14 @@
+import os
 import uuid
+import logging
 from datetime import datetime, timedelta
 from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, desc, and_
+from sqlalchemy import select, func, desc, and_, or_
 from sqlalchemy.orm import selectinload
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.api.deps import get_current_editor, get_current_super_admin
 from app.models.user import User
@@ -13,19 +16,23 @@ from app.models.article import Article
 from app.models.category import Category
 from app.models.source import Source
 from app.models.tag import Tag
+from app.models.image import Image
 from app.models.job import ProcessingJob
 from app.models.audit_log import AuditLog
 from app.schemas.article import ArticleResponse, ArticleCreate, ArticleUpdate, ArticleListResponse
 from app.schemas.source import SourceResponse, SourceCreate, SourceUpdate
 from app.schemas.category import CategoryResponse, CategoryCreate, CategoryUpdate
 from app.schemas.tag import TagResponse, TagCreate
+from app.schemas.media import ImageResponse, ImageUpdate, MediaListResponse
 from app.schemas.job import ProcessingJobResponse, AuditLogResponse, DashboardStats
 from app.services.publishing import publish_article, reject_article, schedule_article, record_audit_log
 from app.services.ingestion.normalizer import generate_slug, sanitize_rich_text
 from app.services.ingestion.orchestrator import process_single_source, run_all_enabled_sources, get_or_create_tags
+from app.services.image_service import save_uploaded_image
 from app.providers.rss_provider import rss_provider
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 # DASHBOARD OVERVIEW & METRICS
@@ -658,3 +665,172 @@ async def delete_tag(
     await db.delete(tag)
     await db.commit()
     return {"message": "Tag deleted successfully"}
+
+# -----------------------------------------------------------------------------
+# MEDIA LIBRARY ADMIN ENDPOINTS
+# -----------------------------------------------------------------------------
+@router.post("/media/upload", response_model=ImageResponse)
+async def upload_admin_media(
+    file: UploadFile = File(...),
+    license_type: str = Form("OWNED"), # OWNED, LICENSED, CC_BY, PUBLIC_DOMAIN, FAIR_USE_THUMBNAIL
+    alt_text: str = Form(""),
+    caption: str = Form(""),
+    credit: str = Form(""),
+    original_source: str = Form("Editorial Staff"),
+    license_url: str = Form(""),
+    current_user: User = Depends(get_current_editor),
+    db: AsyncSession = Depends(get_db)
+):
+    image_record = await save_uploaded_image(
+        db=db,
+        file=file,
+        license_type=license_type,
+        alt_text=alt_text or None,
+        caption=caption or None,
+        credit=credit or None,
+        original_source=original_source or None,
+        license_url=license_url or None
+    )
+    await record_audit_log(
+        db=db,
+        action="MEDIA_UPLOAD",
+        entity_type="image",
+        entity_id=image_record.id,
+        user=current_user,
+        details={"filename": image_record.filename, "url": image_record.storage_url}
+    )
+    return image_record
+
+@router.get("/media", response_model=MediaListResponse)
+async def list_admin_media(
+    q: Optional[str] = Query(None, description="Search by filename, alt text, caption, or credit"),
+    license_type: Optional[str] = Query(None, description="Filter by license type"),
+    page: int = Query(1, ge=1),
+    size: int = Query(24, ge=1, le=100),
+    current_user: User = Depends(get_current_editor),
+    db: AsyncSession = Depends(get_db)
+):
+    stmt = select(Image).order_by(Image.created_at.desc())
+    count_stmt = select(func.count(Image.id))
+
+    if license_type:
+        stmt = stmt.where(Image.license_type == license_type)
+        count_stmt = count_stmt.where(Image.license_type == license_type)
+
+    if q and q.strip():
+        search_pattern = f"%{q.strip()}%"
+        filter_expr = or_(
+            Image.filename.ilike(search_pattern),
+            Image.alt_text.ilike(search_pattern),
+            Image.caption.ilike(search_pattern),
+            Image.credit.ilike(search_pattern),
+            Image.original_source.ilike(search_pattern)
+        )
+        stmt = stmt.where(filter_expr)
+        count_stmt = count_stmt.where(filter_expr)
+
+    total_res = await db.execute(count_stmt)
+    total = total_res.scalar() or 0
+
+    offset = (page - 1) * size
+    stmt = stmt.offset(offset).limit(size)
+
+    res = await db.execute(stmt)
+    items = res.scalars().all()
+    pages = (total + size - 1) // size if total > 0 else 1
+
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "size": size,
+        "pages": pages
+    }
+
+@router.get("/media/{id}", response_model=ImageResponse)
+async def get_admin_media_item(
+    id: str,
+    current_user: User = Depends(get_current_editor),
+    db: AsyncSession = Depends(get_db)
+):
+    stmt = select(Image).where(Image.id == id)
+    res = await db.execute(stmt)
+    image = res.scalar_one_or_none()
+    if not image:
+        raise HTTPException(status_code=404, detail="Media item not found")
+    return image
+
+@router.put("/media/{id}", response_model=ImageResponse)
+async def update_admin_media_metadata(
+    id: str,
+    media_in: ImageUpdate,
+    current_user: User = Depends(get_current_editor),
+    db: AsyncSession = Depends(get_db)
+):
+    stmt = select(Image).where(Image.id == id)
+    res = await db.execute(stmt)
+    image = res.scalar_one_or_none()
+    if not image:
+        raise HTTPException(status_code=404, detail="Media item not found")
+
+    if media_in.alt_text is not None:
+        image.alt_text = media_in.alt_text
+    if media_in.caption is not None:
+        image.caption = media_in.caption
+    if media_in.credit is not None:
+        image.credit = media_in.credit
+    if media_in.original_source is not None:
+        image.original_source = media_in.original_source
+    if media_in.license_type is not None:
+        image.license_type = media_in.license_type
+    if media_in.license_url is not None:
+        image.license_url = media_in.license_url
+    
+    image.updated_at = datetime.utcnow()
+
+    await record_audit_log(
+        db=db,
+        action="MEDIA_UPDATE",
+        entity_type="image",
+        entity_id=image.id,
+        user=current_user,
+        details={"alt_text": image.alt_text, "license": image.license_type}
+    )
+    await db.commit()
+    await db.refresh(image)
+    return image
+
+@router.delete("/media/{id}")
+async def delete_admin_media_item(
+    id: str,
+    current_user: User = Depends(get_current_editor),
+    db: AsyncSession = Depends(get_db)
+):
+    stmt = select(Image).where(Image.id == id)
+    res = await db.execute(stmt)
+    image = res.scalar_one_or_none()
+    if not image:
+        raise HTTPException(status_code=404, detail="Media item not found")
+
+    # If local file exists, remove it
+    if image.storage_url and image.storage_url.startswith("/uploads/"):
+        filename = os.path.basename(image.storage_url)
+        file_path = os.path.join(settings.UPLOAD_DIR, filename)
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception as e:
+                logger.warning(f"Could not remove local file {file_path}: {e}")
+
+    await record_audit_log(
+        db=db,
+        action="MEDIA_DELETE",
+        entity_type="image",
+        entity_id=image.id,
+        user=current_user,
+        details={"filename": image.filename, "url": image.storage_url}
+    )
+    await db.delete(image)
+    await db.commit()
+    return {"message": "Media item deleted successfully"}
+

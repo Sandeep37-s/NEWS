@@ -8,6 +8,7 @@ import { formatDate, formatTimeAgo, estimateReadingTime, getFullImageUrl } from 
 import { generateNewsArticleJsonLd } from "@/lib/seo";
 import SocialShare from "@/components/public/SocialShare";
 import ArticleCard from "@/components/public/ArticleCard";
+import ArticleContentRenderer from "@/components/public/ArticleContentRenderer";
 
 interface ArticlePageProps {
   params: {
@@ -160,11 +161,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           </figure>
         )}
 
-        {/* Article Body Content */}
-        <div
-          className="prose prose-lg max-w-none text-gray-800 leading-relaxed space-y-6 font-serif"
-          dangerouslySetInnerHTML={{ __html: article.content || `<p>${article.summary}</p>` }}
-        />
+        {/* Article Body Content with Rich Inline Images */}
+        <ArticleContentRenderer content={article.content || `<p>${article.summary}</p>`} />
 
         {/* Source Attribution & Copyright Card */}
         {article.source && (

@@ -45,13 +45,28 @@ export interface Tag {
 
 export interface ImageAsset {
   id: string;
+  filename?: string;
   storage_url: string;
-  original_source?: string;
-  license_type: string;
-  alt_text?: string;
+  mime_type?: string;
+  file_size?: number;
   width?: number;
   height?: number;
+  alt_text?: string;
+  caption?: string;
+  credit?: string;
+  original_source?: string;
+  license_type: string;
+  license_url?: string;
   created_at: string;
+  updated_at?: string;
+}
+
+export interface MediaListResponse {
+  items: ImageAsset[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
 }
 
 export interface Article {

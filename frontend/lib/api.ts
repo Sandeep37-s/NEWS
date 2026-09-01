@@ -286,14 +286,61 @@ export const api = {
       return apiFetch<AuditLog[]>(`/admin/logs?limit=${limit}`, { headers, cache: "no-store" });
     },
 
-    // Image Upload
+    // Image & Media Library Management
     uploadImage: (formData: FormData, token?: string) => {
       const headers: Record<string, string> = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
-      return apiFetch<any>("/images/upload", {
+      return apiFetch<any>("/admin/media/upload", {
         method: "POST",
         headers,
         body: formData,
+      });
+    },
+
+    uploadMedia: (formData: FormData, token?: string) => {
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return apiFetch<any>("/admin/media/upload", {
+        method: "POST",
+        headers,
+        body: formData,
+      });
+    },
+
+    getMediaList: (params?: { q?: string; license_type?: string; page?: number; size?: number }, token?: string) => {
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const searchParams = new URLSearchParams();
+      if (params?.q) searchParams.append("q", params.q);
+      if (params?.license_type) searchParams.append("license_type", params.license_type);
+      if (params?.page) searchParams.append("page", params.page.toString());
+      if (params?.size) searchParams.append("size", params.size.toString());
+
+      return apiFetch<any>(`/admin/media?${searchParams.toString()}`, { headers, cache: "no-store" });
+    },
+
+    getMediaById: (id: string, token?: string) => {
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return apiFetch<any>(`/admin/media/${id}`, { headers, cache: "no-store" });
+    },
+
+    updateMedia: (id: string, data: any, token?: string) => {
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return apiFetch<any>(`/admin/media/${id}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(data),
+      });
+    },
+
+    deleteMedia: (id: string, token?: string) => {
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return apiFetch<{ message: string }>(`/admin/media/${id}`, {
+        method: "DELETE",
+        headers,
       });
     },
   },
