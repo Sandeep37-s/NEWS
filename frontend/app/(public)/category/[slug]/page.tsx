@@ -33,14 +33,31 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   let articles: any[] = [];
 
   try {
-    const [catData, articlesData] = await Promise.all([
+    const [catData, articlesData] = await Promise.allSettled([
       api.getCategoryBySlug(catSlug),
       api.getArticles({ category: catSlug, size: 24, sort: "latest" }),
     ]);
-    category = catData;
-    articles = articlesData.items || [];
+
+    if (catData.status === "fulfilled") {
+      category = catData.value;
+    } else {
+      const prettyName = catSlug.charAt(0).toUpperCase() + catSlug.slice(1);
+      category = {
+        name: prettyName,
+        slug: catSlug,
+        description: `Comprehensive news, analysis, and reports in ${prettyName}.`,
+      };
+    }
+
+    if (articlesData.status === "fulfilled") {
+      articles = articlesData.value.items || [];
+    }
   } catch (err) {
-    notFound();
+    category = {
+      name: catSlug.charAt(0).toUpperCase() + catSlug.slice(1),
+      slug: catSlug,
+      description: `News coverage for ${catSlug}.`,
+    };
   }
 
   return (
