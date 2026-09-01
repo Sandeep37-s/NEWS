@@ -1,6 +1,5 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { format, formatDistanceToNow, parseISO } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -9,8 +8,13 @@ export function cn(...inputs: ClassValue[]) {
 export function formatDate(dateString?: string): string {
   if (!dateString) return "";
   try {
-    const date = parseISO(dateString);
-    return format(date, "MMMM d, yyyy");
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric"
+    }).format(date);
   } catch {
     return dateString;
   }
@@ -19,8 +23,18 @@ export function formatDate(dateString?: string): string {
 export function formatTimeAgo(dateString?: string): string {
   if (!dateString) return "";
   try {
-    const date = parseISO(dateString);
-    return formatDistanceToNow(date, { addSuffix: true });
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return "just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    const days = Math.floor(diffInSeconds / 86400);
+    if (days === 1) return "yesterday";
+    if (days < 30) return `${days}d ago`;
+    return formatDate(dateString);
   } catch {
     return dateString;
   }
