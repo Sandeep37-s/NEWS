@@ -50,6 +50,9 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Alias main = app so both `app.main:app` and `app.main:main` start the server
+main = app
+
 # Rate limiter state
 app.state.limiter = limiter
 
