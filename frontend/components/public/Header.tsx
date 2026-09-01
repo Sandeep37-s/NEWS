@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Search, Menu, X, Globe, Shield, Sparkles, TrendingUp } from "lucide-react";
 import { Category } from "@/types";
 
@@ -19,6 +19,7 @@ const NAV_CATEGORIES = [
 ];
 
 export default function Header() {
+  const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
@@ -106,26 +107,37 @@ export default function Header() {
       {/* Categories Navigation Bar */}
       <nav className="border-t border-gray-100 hidden md:block bg-white">
         <div className="max-w-7xl mx-auto px-4">
-          <ul className="flex items-center space-x-1 lg:space-x-6 overflow-x-auto py-2.5 text-sm font-medium text-gray-700">
+          <ul className="flex items-center space-x-1 lg:space-x-2 overflow-x-auto py-2 text-sm font-medium text-gray-700">
             <li>
               <Link
                 href="/latest"
-                className="flex items-center px-3 py-1 rounded-md text-red-600 hover:bg-red-50 font-semibold transition"
+                className={`flex items-center px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition ${
+                  pathname === "/latest"
+                    ? "bg-red-50 text-red-700 shadow-sm border border-red-200/80"
+                    : "text-red-600 hover:bg-red-50"
+                }`}
               >
-                <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse mr-2" />
+                <span className={`w-2 h-2 rounded-full bg-red-600 mr-2 ${pathname === "/latest" ? "animate-none" : "animate-pulse"}`} />
                 Latest Wire
               </Link>
             </li>
-            {NAV_CATEGORIES.map((cat) => (
-              <li key={cat.slug}>
-                <Link
-                  href={`/category/${cat.slug}`}
-                  className="px-3 py-1 rounded-md hover:text-blue-600 hover:bg-gray-50 transition block whitespace-nowrap"
-                >
-                  {cat.name}
-                </Link>
-              </li>
-            ))}
+            {NAV_CATEGORIES.map((cat) => {
+              const isActive = pathname === `/category/${cat.slug}`;
+              return (
+                <li key={cat.slug}>
+                  <Link
+                    href={`/category/${cat.slug}`}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition block whitespace-nowrap ${
+                      isActive
+                        ? "bg-blue-50 text-blue-700 shadow-sm border border-blue-200/80"
+                        : "text-gray-700 hover:text-blue-600 hover:bg-gray-100/80 font-medium"
+                    }`}
+                  >
+                    {cat.name}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </nav>
@@ -150,21 +162,32 @@ export default function Header() {
             <Link
               href="/latest"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center px-3 py-2 rounded-lg text-red-600 font-semibold bg-red-50"
+              className={`flex items-center px-3 py-2 rounded-lg text-sm font-semibold transition ${
+                pathname === "/latest"
+                  ? "bg-red-50 text-red-700 shadow-xs border border-red-200"
+                  : "text-red-600 hover:bg-red-50"
+              }`}
             >
               <span className="w-2 h-2 rounded-full bg-red-600 mr-2" />
               Latest News Wire
             </Link>
-            {NAV_CATEGORIES.map((cat) => (
-              <Link
-                key={cat.slug}
-                href={`/category/${cat.slug}`}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-100 rounded-lg"
-              >
-                {cat.name}
-              </Link>
-            ))}
+            {NAV_CATEGORIES.map((cat) => {
+              const isActive = pathname === `/category/${cat.slug}`;
+              return (
+                <Link
+                  key={cat.slug}
+                  href={`/category/${cat.slug}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`block px-3 py-2 text-sm rounded-lg transition ${
+                    isActive
+                      ? "bg-blue-50 text-blue-700 font-bold shadow-xs border border-blue-200/70"
+                      : "text-gray-800 hover:bg-gray-100 font-medium"
+                  }`}
+                >
+                  {cat.name}
+                </Link>
+              );
+            })}
           </div>
 
           <div className="border-t border-gray-200 pt-3 space-y-2 text-sm text-gray-600">
