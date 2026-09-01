@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     # OpenRouter AI
     OPENROUTER_API_KEY: str = ""
-    OPENROUTER_MODEL: str = "google/gemini-2.0-flash-001"
+    OPENROUTER_MODEL: str = "deepseek/deepseek-chat"
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
     OPENROUTER_MAX_TOKENS: int = 500
     OPENROUTER_TEMPERATURE: float = 0.3
@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     CLOUDINARY_API_SECRET: str = ""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=("../.env", ".env"),
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore"
