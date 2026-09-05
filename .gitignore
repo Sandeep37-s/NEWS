@@ -45,6 +45,8 @@ frontend/.env
 # Databases and storage
 *.sqlite3
 *.db
+*.db-shm
+*.db-wal
 news_platform.db
 backend/news_platform.db
 uploads/
