@@ -66,3 +66,31 @@ async def test_deduplication_engine(db_session: AsyncSession):
         title="Completely Unrelated Space Discovery"
     )
     assert is_new is False
+
+    # Test long external_id GUID (Google News style > 255 characters)
+    long_guid = "CBMinAFBVV95cUxQbVFUUzlab1o2WlFMRVFWUzg4V09qWDRMVHdjSng4b0hOZFE5T3dWclNrY0toU3FfRW0xaHhERTJrS1pwel9fTExJUFNERFA4TWhNSVpWaEsxUmJjbmxVWkM3b2FMUHUyTmNrbUZPdUhQcE4tZ1A3S1dZYzk1eHdlOUZPd0UxLXc5VUZKY1dmOWFQcmZkTVNtNTdBR2I" * 2
+    article_long = Article(
+        id="art-test-long-guid",
+        title="Article With Long External GUID",
+        slug="article-with-long-external-guid",
+        summary="Testing long guid storage.",
+        original_url="https://news.google.com/rss/articles/long-guid-test",
+        url_hash=compute_url_hash("https://news.google.com/rss/articles/long-guid-test"),
+        external_id=long_guid[:1024],
+        source_id="test-source-id",
+        category_id="test-tech-cat-uuid",
+        status="PUBLISHED"
+    )
+    db_session.add(article_long)
+    await db_session.commit()
+
+    is_guid_dup, reason_guid = await is_duplicate_article(
+        db=db_session,
+        original_url=None,
+        external_id=long_guid[:1024],
+        title="Different Title",
+        source_id="test-source-id"
+    )
+    assert is_guid_dup is True
+    assert "Source GUID duplicate" in reason_guid
+

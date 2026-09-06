@@ -16,14 +16,14 @@ class Article(Base):
     
     # Source & Aggregation Details
     source_id: Mapped[str] = mapped_column(String(36), ForeignKey("sources.id", ondelete="SET NULL"), nullable=True)
-    original_url: Mapped[str] = mapped_column(String(1024), nullable=True)
+    original_url: Mapped[str] = mapped_column(String(2048), nullable=True)
     url_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=True) # SHA256 deduplication
-    external_id: Mapped[str] = mapped_column(String(255), nullable=True, index=True)
+    external_id: Mapped[str] = mapped_column(String(1024), nullable=True, index=True)
     content_origin: Mapped[str] = mapped_column(String(50), default="ORIGINAL", nullable=False) # ORIGINAL, AGGREGATED, AI_ASSISTED, LICENSED
     
     # Media & Classification
     image_id: Mapped[str] = mapped_column(String(36), ForeignKey("images.id", ondelete="SET NULL"), nullable=True)
-    author: Mapped[str] = mapped_column(String(255), nullable=True)
+    author: Mapped[str] = mapped_column(String(500), nullable=True)
     category_id: Mapped[str] = mapped_column(String(36), ForeignKey("categories.id", ondelete="RESTRICT"), nullable=False)
     created_by_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     

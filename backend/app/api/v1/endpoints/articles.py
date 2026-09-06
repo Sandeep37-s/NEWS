@@ -17,7 +17,7 @@ async def list_published_articles(
     tag: Optional[str] = Query(None, description="Tag slug"),
     page: int = Query(1, ge=1),
     size: int = Query(12, ge=1, le=50),
-    sort: str = Query("latest", regex="^(latest|popular|oldest)$"),
+    sort: str = Query("latest", pattern="^(latest|popular|oldest)$"),
     db: AsyncSession = Depends(get_db)
 ):
     items, total = await search_published_articles(

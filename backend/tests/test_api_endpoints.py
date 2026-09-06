@@ -11,11 +11,15 @@ async def test_public_categories_and_articles_endpoints(client: AsyncClient):
     assert any(c["slug"] == "technology" for c in cats)
 
     # 2. List Articles
-    res_art = await client.get("/api/v1/articles")
+    res_art = await client.get("/api/v1/articles?sort=popular")
     assert res_art.status_code == 200
     data = res_art.json()
     assert "items" in data
     assert "total" in data
+
+    # 3. Invalid sort param should trigger 422 Unprocessable Entity
+    res_invalid_sort = await client.get("/api/v1/articles?sort=invalid_sort_type")
+    assert res_invalid_sort.status_code == 422
 
 @pytest.mark.asyncio
 async def test_admin_protected_routes_unauthenticated(client: AsyncClient):

@@ -106,15 +106,15 @@ class RSSProvider(NewsProvider):
                             categories.append(term.strip())
 
                 items.append(RawArticleItem(
-                    title=clean_html_to_text(title),
-                    original_url=clean_link,
-                    external_id=str(guid),
+                    title=clean_html_to_text(title)[:500],
+                    original_url=clean_link[:2048],
+                    external_id=str(guid)[:1024],
                     summary_raw=clean_html_to_text(summary_raw),
                     content_raw=clean_html_to_text(content_raw) if content_raw else clean_html_to_text(summary_raw),
-                    author=author.strip() if author else None,
+                    author=author.strip()[:500] if author else None,
                     published_at=pub_date or datetime.utcnow(),
-                    image_url=image_url,
-                    categories=categories
+                    image_url=image_url[:2048] if image_url else None,
+                    categories=[c[:100] for c in categories]
                 ))
 
         except Exception as e:

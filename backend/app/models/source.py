@@ -9,8 +9,8 @@ class Source(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    website_url: Mapped[str] = mapped_column(String(1024), nullable=False)
-    rss_url: Mapped[str] = mapped_column(String(1024), unique=True, index=True, nullable=False)
+    website_url: Mapped[str] = mapped_column(String(2048), nullable=False)
+    rss_url: Mapped[str] = mapped_column(String(2048), unique=True, index=True, nullable=False)
     provider_type: Mapped[str] = mapped_column(String(50), default="RSS", nullable=False) # RSS, LICENSED_API, CUSTOM
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     default_category_id: Mapped[str] = mapped_column(String(36), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)

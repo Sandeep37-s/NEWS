@@ -26,6 +26,18 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing database schema...")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        if engine.dialect.name == "postgresql":
+            try:
+                from sqlalchemy import text
+                await conn.execute(text("ALTER TABLE articles ALTER COLUMN external_id TYPE VARCHAR(1024);"))
+                await conn.execute(text("ALTER TABLE articles ALTER COLUMN original_url TYPE VARCHAR(2048);"))
+                await conn.execute(text("ALTER TABLE articles ALTER COLUMN author TYPE VARCHAR(500);"))
+                await conn.execute(text("ALTER TABLE sources ALTER COLUMN website_url TYPE VARCHAR(2048);"))
+                await conn.execute(text("ALTER TABLE sources ALTER COLUMN rss_url TYPE VARCHAR(2048);"))
+                await conn.execute(text("ALTER TABLE images ALTER COLUMN storage_url TYPE VARCHAR(2048);"))
+                await conn.execute(text("ALTER TABLE images ALTER COLUMN license_url TYPE VARCHAR(2048);"))
+            except Exception as e:
+                logger.info(f"Postgres column alteration status: {e}")
     logger.info("Database schema initialized.")
 
     # Ensure uploads directory exists
@@ -64,10 +76,15 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     )
 
 # CORS configuration
+cors_origins = settings.ALLOWED_ORIGINS
+if isinstance(cors_origins, str):
+    cors_origins = [cors_origins]
+allow_all = "*" in cors_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
-    allow_credentials=True,
+    allow_origins=cors_origins if not allow_all else ["*"],
+    allow_credentials=not allow_all,
     allow_methods=["*"],
     allow_headers=["*"],
 )

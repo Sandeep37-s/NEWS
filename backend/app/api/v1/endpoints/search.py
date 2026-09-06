@@ -12,7 +12,7 @@ async def search(
     q: str = Query("", description="Search keywords"),
     category: Optional[str] = Query(None, description="Category filter slug"),
     tag: Optional[str] = Query(None, description="Tag filter slug"),
-    sort: str = Query("latest", regex="^(latest|popular|oldest)$"),
+    sort: str = Query("latest", pattern="^(latest|popular|oldest)$"),
     page: int = Query(1, ge=1),
     size: int = Query(12, ge=1, le=50),
     db: AsyncSession = Depends(get_db)
