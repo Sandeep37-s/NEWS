@@ -23,7 +23,7 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
   const defaultOptions: RequestInit = {
     ...options,
     headers,
-    signal: options.signal || (typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(5000) : undefined),
+    signal: options.signal || (typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(15000) : undefined),
     credentials: "include", // For HTTP-only JWT cookies
   };
 

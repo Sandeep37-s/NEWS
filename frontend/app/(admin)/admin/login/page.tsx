@@ -18,8 +18,8 @@ export default function AdminLoginPage() {
     setError(null);
 
     try {
-      await api.login({ email, password });
-      router.push("/admin/dashboard");
+      await api.login({ email: email.trim().toLowerCase(), password });
+      window.location.href = "/admin/dashboard";
     } catch (err: any) {
       setError(err.message || "Invalid email or password");
     } finally {

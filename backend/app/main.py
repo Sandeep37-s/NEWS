@@ -50,19 +50,26 @@ async def lifespan(app: FastAPI):
             from app.core.security import get_password_hash
 
             # 1. Superadmin User
-            stmt_user = select(User).where(User.email == settings.SUPERADMIN_EMAIL)
+            clean_admin_email = settings.SUPERADMIN_EMAIL.strip().lower()
+            stmt_user = select(User).where(User.email == clean_admin_email)
             res_user = await db.execute(stmt_user)
-            if not res_user.scalar_one_or_none():
-                logger.info(f"Creating default superadmin user: {settings.SUPERADMIN_EMAIL}")
+            existing_user = res_user.scalar_one_or_none()
+            if not existing_user:
+                logger.info(f"Creating default superadmin user: {clean_admin_email}")
                 superadmin = User(
                     id=str(uuid.uuid4()),
-                    email=settings.SUPERADMIN_EMAIL,
+                    email=clean_admin_email,
                     hashed_password=get_password_hash(settings.SUPERADMIN_PASSWORD),
                     full_name=settings.SUPERADMIN_NAME,
                     role="SUPER_ADMIN",
                     is_active=True
                 )
                 db.add(superadmin)
+            else:
+                # Ensure existing admin record has the configured password hash, active status, and SUPER_ADMIN role
+                existing_user.role = "SUPER_ADMIN"
+                existing_user.is_active = True
+                existing_user.hashed_password = get_password_hash(settings.SUPERADMIN_PASSWORD)
 
             # 2. Default Categories
             default_categories = [

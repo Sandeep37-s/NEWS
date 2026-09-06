@@ -14,14 +14,15 @@ from app.api.deps import get_current_user, limiter
 router = APIRouter()
 
 @router.post("/login", response_model=Token)
-@limiter.limit("5/minute")
+@limiter.limit("30/minute")
 async def login(
     request: Request,
     response: Response,
     login_data: LoginRequest,
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(User).where(User.email == login_data.email)
+    clean_email = login_data.email.strip().lower()
+    stmt = select(User).where(User.email == clean_email)
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
 
@@ -43,14 +44,15 @@ async def login(
         subject=user.id, expires_delta=access_token_expires
     )
 
-    # Set secure HTTP-only cookie
+    # Set secure cookie (samesite='none' and secure=True in production for cross-site Vercel -> Azure API requests)
+    is_https = settings.ENVIRONMENT == "production" or request.url.scheme == "https"
     response.set_cookie(
         key="access_token",
         value=f"Bearer {access_token}",
         httponly=True,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        samesite="lax",
-        secure=settings.ENVIRONMENT == "production"
+        samesite="none" if is_https else "lax",
+        secure=is_https
     )
 
     return {
