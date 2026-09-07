@@ -38,6 +38,20 @@ class Settings(BaseSettings):
     # Ingestion & Scheduler
     RSS_FETCH_INTERVAL_MINUTES: int = 15
     ENABLE_BACKGROUND_WORKER: bool = True
+
+    # Rolling Viral News 30 Configuration
+    HOT_NEWS_LIMIT: int = 30
+    HOT_NEWS_WINDOW_HOURS: int = 12
+    HOT_NEWS_REFRESH_MINUTES: int = 10
+    HOT_NEWS_MIN_SCORE: float = 60.0
+    HOT_NEWS_AI_THRESHOLD: float = 75.0
+    HOT_NEWS_USE_AI: bool = True
+    HOT_NEWS_WEIGHT_FRESHNESS: float = 0.30
+    HOT_NEWS_WEIGHT_COVERAGE: float = 0.20
+    HOT_NEWS_WEIGHT_TOPIC: float = 0.20
+    HOT_NEWS_WEIGHT_RELIABILITY: float = 0.15
+    HOT_NEWS_WEIGHT_BREAKING: float = 0.10
+    HOT_NEWS_WEIGHT_ENGAGEMENT: float = 0.05
     
     # Initial Superadmin
     SUPERADMIN_EMAIL: str = "admin@newsplatform.com"

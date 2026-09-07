@@ -4,23 +4,28 @@ import { ArrowRight, Flame, Sparkles, TrendingUp, Rss } from "lucide-react";
 import { api } from "@/lib/api";
 import HeroStory from "@/components/public/HeroStory";
 import ArticleCard from "@/components/public/ArticleCard";
+import RollingViralFeed from "@/components/public/RollingViralFeed";
+import { HotNewsResponse } from "@/types";
 
 export const revalidate = 60; // ISR revalidate every 60 seconds
 
 export default async function HomePage() {
+  let hotNewsData: HotNewsResponse | null = null;
   let latestArticles: any[] = [];
   let featuredArticles: any[] = [];
   let categories: any[] = [];
   let tags: any[] = [];
 
   try {
-    const [latestRes, featuredRes, categoriesRes, tagsRes] = await Promise.allSettled([
+    const [hotNewsRes, latestRes, featuredRes, categoriesRes, tagsRes] = await Promise.allSettled([
+      api.getHotNews({ limit: 30 }),
       api.getArticles({ size: 15, sort: "latest" }),
       api.getFeaturedArticles(5),
       api.getCategories(),
       api.getPopularTags(15),
     ]);
 
+    if (hotNewsRes.status === "fulfilled") hotNewsData = hotNewsRes.value;
     if (latestRes.status === "fulfilled") latestArticles = latestRes.value.items || [];
     if (featuredRes.status === "fulfilled") featuredArticles = featuredRes.value.items || [];
     if (categoriesRes.status === "fulfilled") categories = categoriesRes.value || [];
@@ -104,6 +109,9 @@ export default async function HomePage() {
           </div>
         </div>
       )}
+
+      {/* Rolling Viral News 30 Section */}
+      <RollingViralFeed hotNewsData={hotNewsData} />
 
       {/* Primary News Grid */}
       {gridArticles.length > 0 && (

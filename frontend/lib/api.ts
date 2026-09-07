@@ -1,4 +1,4 @@
-import { Article, ArticleListResponse, Category, Tag, Source, DashboardStats, ProcessingJob, AuditLog, User } from "@/types";
+import { Article, ArticleListResponse, Category, Tag, Source, DashboardStats, ProcessingJob, AuditLog, User, HotNewsResponse } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -45,6 +45,14 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
 // PUBLIC API
 // -----------------------------------------------------------------------------
 export const api = {
+  // Hot News (Rolling Viral News 30)
+  getHotNews: (params?: { limit?: number; category?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.category) searchParams.append("category", params.category);
+    return apiFetch<HotNewsResponse>(`/hot-news?${searchParams.toString()}`, { next: { revalidate: 30 } });
+  },
+
   // Articles
   getArticles: (params?: { category?: string; tag?: string; page?: number; size?: number; sort?: string }) => {
     const searchParams = new URLSearchParams();

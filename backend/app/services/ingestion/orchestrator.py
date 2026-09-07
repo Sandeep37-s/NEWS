@@ -16,6 +16,7 @@ from app.providers.rss_provider import rss_provider
 from app.services.deduplication import is_duplicate_article, compute_url_hash
 from app.services.ai.openrouter import ai_service
 from app.services.ingestion.normalizer import generate_slug
+from app.services.hot_news_service import evaluate_and_add_candidate
 
 logger = logging.getLogger(__name__)
 
@@ -175,6 +176,25 @@ async def process_single_source(db: AsyncSession, source: Source, limit: int = 1
                     )
                     db.add(article)
                     await db.flush()
+
+                    # 10. Evaluate candidate for Rolling Viral News 30 Feed
+                    try:
+                        await evaluate_and_add_candidate(
+                            db=db,
+                            candidate={
+                                "article_id": article.id,
+                                "source_url": item.original_url or article.original_url,
+                                "title": final_title,
+                                "summary": final_summary,
+                                "image_url": item.image_url,
+                                "category_slug": category.slug,
+                                "source_name": source_name,
+                                "published_at": published_date or datetime.utcnow(),
+                                "slug": article.slug
+                            }
+                        )
+                    except Exception as hot_err:
+                        logger.warning(f"Error evaluating hot news candidate '{final_title}': {hot_err}")
                 items_processed += 1
             except Exception as item_err:
                 logger.warning(f"Failed to process individual feed article '{item.title}' from source {source_name}: {item_err}")

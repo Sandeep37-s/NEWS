@@ -140,3 +140,29 @@ export interface DashboardStats {
   articles_this_week: number;
   recent_activity: AuditLog[];
 }
+
+export interface HotNewsItem {
+  id: string;
+  article_id?: string;
+  source_url: string;
+  title: string;
+  slug?: string;
+  summary?: string;
+  image_url?: string;
+  category_slug?: string;
+  source_name?: string;
+  viral_score: number;
+  source_count: number;
+  published_at?: string;
+  added_at: string;
+  expires_at: string;
+}
+
+export interface HotNewsResponse {
+  items: HotNewsItem[];
+  count: number;
+  max_items: number;
+  remaining_slots: number;
+  last_reset_at?: string;
+  next_reset_at?: string;
+}
